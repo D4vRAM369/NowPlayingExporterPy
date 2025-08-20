@@ -1,0 +1,6 @@
+<resources>
+    <style name="Theme.NPExporter" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:statusBarColor">#0F0F23</item>
+        <item name="android:navigationBarColor">#0F0F23</item>
+    </style>
+</resources>
