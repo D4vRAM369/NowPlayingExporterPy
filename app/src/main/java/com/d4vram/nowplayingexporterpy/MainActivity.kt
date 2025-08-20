@@ -6,10 +6,12 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -17,9 +19,11 @@ import java.util.*
 class MainActivity : AppCompatActivity() {
 
     private lateinit var tvStatus: TextView
+    private lateinit var tvSubtitle: TextView
     private lateinit var tvLog: TextView
     private lateinit var btnExport: Button
     private lateinit var btnShare: Button
+    private lateinit var fabShare: FloatingActionButton
     private lateinit var cbDedupe: CheckBox
 
     private var lastCsvUri: Uri? = null
@@ -37,29 +41,35 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        tvStatus = findViewById(R.id.tvStatus)
-        tvLog = findViewById(R.id.tvLog)
-        btnExport = findViewById(R.id.btnExport)
-        btnShare = findViewById(R.id.btnShare)
-        cbDedupe = findViewById(R.id.cbDedupe)
+        // ---- View binding manual ----
+        tvStatus   = findViewById(R.id.tvStatus)
+        tvSubtitle = findViewById(R.id.tvSubtitle)
+        tvLog      = findViewById(R.id.tvLog)
+        btnExport  = findViewById(R.id.btnExport)
+        btnShare   = findViewById(R.id.btnShare)
+        fabShare   = findViewById(R.id.fabShare)
+        cbDedupe   = findViewById(R.id.cbDedupe)
+
+        // Acciones de compartir (botón y FAB usan la misma función)
+        btnShare.setOnClickListener { shareCsv() }
+        fabShare.setOnClickListener { shareCsv() }
+        fabShare.visibility = View.GONE
 
         RootHelper.init()
-
-        if (!Python.isStarted()) {
-            Python.start(AndroidPlatform(this))
-        }
+        if (!Python.isStarted()) Python.start(AndroidPlatform(this))
 
         if (!RootHelper.isRootAvailable()) {
-            tvStatus.text = "Root NO disponible. Esta app requiere root para leer la DB privada de Android System Intelligence."
+            tvStatus.text = "Root NO disponible."
+            tvSubtitle.text = "Esta app requiere root para leer la DB privada de Android System Intelligence."
             btnExport.isEnabled = false
             Toast.makeText(this, "Root no detectado", Toast.LENGTH_LONG).show()
             return
         }
 
-        tvStatus.text = "Root OK. Pulsa Exportar para generar el CSV en Descargas."
+        tvStatus.text = "Listo para exportar"
+        tvSubtitle.text = "Pulsa Exportar para generar el CSV en Descargas."
 
         btnExport.setOnClickListener { doExport() }
-        btnShare.setOnClickListener { shareCsv() }
     }
 
     private fun doExport() {
@@ -73,18 +83,18 @@ class MainActivity : AppCompatActivity() {
             if (!RootHelper.copyFileAsRoot(src, localDb)) error("Falló la copia con root.")
             log("DB copiada a sandbox.")
 
-            // Salida temporal en caché (luego movemos a Descargas)
+            // Salida temporal (luego movemos a Descargas)
             val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
             val tmpCsv = File(cacheDir, "now_playing_export_${stamp}.csv").absolutePath
 
             // Llamar a Python: exportar
             val py = Python.getInstance()
-            val mod = py.getModule("np_export")
-            val rows = mod.callAttr("export_csv", localDb, tmpCsv).toInt()
+            val rows = py.getModule("np_export")
+                .callAttr("export_csv", localDb, tmpCsv)
+                .toInt()
             log("Exportadas $rows filas a temporal.")
 
             var finalCsvPath = tmpCsv
-
             if (cbDedupe.isChecked) {
                 val dedupPath = File(cacheDir, "now_playing_export_${stamp}_dedup_10min.csv").absolutePath
                 py.getModule("np_dedupe")
@@ -93,7 +103,7 @@ class MainActivity : AppCompatActivity() {
                 finalCsvPath = dedupPath
             }
 
-            // Mover a Descargas (MediaStore)
+            // Guardar en Descargas (MediaStore)
             val nameOnly = File(finalCsvPath).name
             val uri = insertIntoDownloads(nameOnly, "text/csv")
             contentResolver.openOutputStream(uri)!!.use { out ->
@@ -102,14 +112,19 @@ class MainActivity : AppCompatActivity() {
             lastCsvUri = uri
             lastCsvName = nameOnly
 
-            tvStatus.text = "Exportación completada: $nameOnly (Descargas)"
+            tvStatus.text = "Exportación completada"
+            tvSubtitle.text = "$nameOnly (Descargas)"
+            fabShare.visibility = View.VISIBLE
+
             Toast.makeText(this, "Listo: $nameOnly", Toast.LENGTH_LONG).show()
             log("Guardado en Descargas como $nameOnly")
 
         }.onFailure { e ->
-            val msg = "Error: ${e.message}"
-            tvStatus.text = msg
-            log(msg)
+            val msg = e.message ?: "Error desconocido"
+            tvStatus.text = "Error"
+            tvSubtitle.text = msg
+            fabShare.visibility = View.GONE
+            log("Error: $msg")
         }
     }
 

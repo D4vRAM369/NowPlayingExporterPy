@@ -15,16 +15,16 @@ android {
         versionCode = 1
         versionName = "1.0.0"
 
-        // Chaquopy necesita esto:
+        // Requisito de Chaquopy: declarar ABI
         ndk {
-            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
         }
     }
 
-
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -32,9 +32,11 @@ android {
         }
         debug {
             isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 
+    // 👇 ESTE es el bloque que te fallaba: debe ir *dentro* de android { }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -44,24 +46,21 @@ android {
     }
 }
 
-
-    // Usamos solo la stdlib (tus scripts no requieren pip).
-    // Si algún día quieres dependencias:
-    // pip {
-    //     install("pandas==2.2.2")
-    // }
-
+// No necesitas pip; si algún día lo usas en Kotlin DSL:
+// extensions.configure<com.chaquo.python.PythonExtension>("python") {
+//     pip { install("numpy==1.26.4") }
+// }
 
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
 
-    // Root (Magisk/libsu)
+    // Root (desde JitPack, recuerda tener jitpack en settings.gradle.kts)
     implementation("com.github.topjohnwu.libsu:core:5.2.2")
     implementation("com.github.topjohnwu.libsu:service:5.2.2")
 
-    // 👇 dependencias de testing
+    // Tests opcionales
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")

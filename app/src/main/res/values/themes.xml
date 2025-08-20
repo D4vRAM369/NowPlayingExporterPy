@@ -1,6 +1,18 @@
 <resources>
-    <style name="Theme.NPExporter" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="android:statusBarColor">#0F0F23</item>
-        <item name="android:navigationBarColor">#0F0F23</item>
+    <style name="Theme.NowPlayingExporterPy" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+
+        <!-- Botones redondos -->
+        <item name="shapeAppearanceSmallComponent">@style/Shape.Rounded</item>
+        <item name="shapeAppearanceMediumComponent">@style/Shape.Rounded</item>
+        <item name="shapeAppearanceLargeComponent">@style/Shape.Rounded</item>
+    </style>
+
+    <style name="Shape.Rounded" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">20dp</item>
     </style>
 </resources>
