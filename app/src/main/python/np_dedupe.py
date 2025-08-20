@@ -1,5 +1,8 @@
-# -*- coding: utf-8 -*-
-# Dedupe funcional como librería: dedupe_csv(in_path, out_path, window_min=10, exact=False)
+# np_dedupe.py
+# Módulo para deduplicar registros de Now Playing exportados de la DB.
+# Mantiene la primera ocurrencia de una canción dentro de un intervalo de tiempo.
+
+
 import csv, re
 from datetime import datetime, timezone, timedelta
 
@@ -43,6 +46,9 @@ def _write_rows(path, fieldnames, rows):
         w = csv.DictWriter(f, fieldnames=fieldnames)
         w.writeheader()
         for row in rows: w.writerow(row)
+
+# Intervalo en minutos: si una misma canción aparece varias veces,
+# solo se conserva la primera dentro de esta ventana temporal.
 
 def dedupe_csv(in_path, out_path, window_min=10, exact=False):
     fieldnames, rows = _load_rows(in_path)

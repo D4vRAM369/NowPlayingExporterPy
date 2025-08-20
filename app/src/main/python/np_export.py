@@ -1,6 +1,7 @@
-# -*- coding: utf-8 -*-
-# Basado en nowplaying_export.py de Brian: se elimina la copia con su y
-# se expone una función export_csv(db_path, out_csv_path).
+# np_export.py
+# Módulo que abre la DB de Now Playing y exporta a CSV.
+# Usado por MainActivity.kt mediante Chaquopy.
+
 import csv, datetime as dt, re, sqlite3
 from pathlib import Path
 
