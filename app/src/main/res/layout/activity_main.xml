@@ -3,20 +3,38 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:fitsSystemWindows="true"
-    android:background="@color/bg_dark"
+    android:background="@drawable/bg_gradient"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- Header con título + subtítulo -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:backgroundTint="@android:color/transparent"
-        android:title="Now Playing Exporter"
-        android:titleTextColor="@color/fg_primary"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@android:color/transparent"
+        app:title="NowPlayingExporterPy"
+        app:subtitle="by D4vRAM"
+        app:titleCentered="true"
+        app:subtitleCentered="true"
+        app:titleTextAppearance="@style/TextAppearance.HeaderTitle"
+        app:subtitleTextAppearance="@style/TextAppearance.HeaderSubtitle"
         android:elevation="0dp"
         app:layout_scrollFlags="scroll|enterAlways" />
 
+    <!-- Nota musical en la esquina -->
+    <ImageView
+        android:id="@+id/ivNote"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="16dp"
+        android:alpha="0.85"
+        android:contentDescription="@string/app_name"
+        android:src="@drawable/ic_music_note" />
+
+    <!-- Contenido -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -46,6 +64,7 @@
                     android:text="Listo."
                     android:textColor="@color/fg_primary"
                     android:textSize="16sp"
+                    android:fontFamily="@font/inter_semibold"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"/>
 
@@ -55,6 +74,7 @@
                     android:textColor="@color/fg_muted"
                     android:textSize="12sp"
                     android:layout_marginTop="4dp"
+                    android:fontFamily="@font/inter"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"/>
             </LinearLayout>
@@ -118,13 +138,25 @@
                     android:padding="16dp"
                     android:textColor="@color/fg_primary"
                     android:textSize="13sp"
-                    android:fontFamily="monospace"
+                    android:fontFamily="@font/inter"
                     android:lineSpacingExtra="2dp"
                     android:textIsSelectable="true"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
             </ScrollView>
         </com.google.android.material.card.MaterialCardView>
+
+
+        <TextView
+            android:id="@+id/tvRootNote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⚠️ Permisos de Root necesarios"
+            android:textSize="12sp"
+            android:textColor="@color/fg_muted"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:paddingBottom="8dp"/>
 
     </LinearLayout>
 

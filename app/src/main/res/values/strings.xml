@@ -1,4 +1,6 @@
 <resources>
-    <string name="app_name">NP Exporter (Py)</string>
+    <string name="app_name">NowPlayingExporterPy</string>
     <string name="app_title">Now Playing Exporter</string>
+    <string name="NPExporterPy">NowPlayingExporterPy</string>
+    <string name="by_d4vram">by D4vRAM</string>
 </resources>

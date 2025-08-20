@@ -1,18 +1,36 @@
 <resources>
+    <!-- Tema -->
     <style name="Theme.NowPlayingExporterPy" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>
 
-        <!-- Botones redondos -->
+        <!-- Si alguna vista referencia Shape (sin .Rounded), seguirá resolviendo -->
         <item name="shapeAppearanceSmallComponent">@style/Shape.Rounded</item>
         <item name="shapeAppearanceMediumComponent">@style/Shape.Rounded</item>
         <item name="shapeAppearanceLargeComponent">@style/Shape.Rounded</item>
     </style>
 
-    <style name="Shape.Rounded" parent="">
+    <!-- Estilos de forma -->
+    <style name="Shape.Rounded">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">20dp</item>
+    </style>
+
+    <!-- Alias por compatibilidad con referencias antiguas -->
+    <style name="Shape">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">20dp</item>
+    </style>
+
+    <!-- Apariencia de textos del toolbar -->
+    <style name="TextAppearance.HeaderTitle" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/inter_semibold</item>
+        <item name="android:textColor">@color/fg_primary</item>
+    </style>
+    <style name="TextAppearance.HeaderSubtitle" parent="TextAppearance.Material3.BodySmall">
+        <item name="fontFamily">@font/inter</item>
+        <item name="android:textColor">@color/fg_muted</item>
     </style>
 </resources>

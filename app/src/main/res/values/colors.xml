@@ -1,5 +1,4 @@
 <resources>
-    <color name="bg_dark">#0F0F23</color>
     <color name="fg_primary">#E5E7EB</color>
     <color name="fg_muted">#9CA3AF</color>
     <color name="accent">#C7A6FF</color>
