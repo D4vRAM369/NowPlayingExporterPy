@@ -1,15 +1,50 @@
+# Gradle / Android
+.gradle/
+**/build/
+local.properties
 *.iml
-.gradle
-/local.properties
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
 /.idea/workspace.xml
-/.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+/.idea/navEditor.xml
+/.idea/gradle.xml
+/.idea/deploymentTargetDropDown.xml
+.cxx/
+.externalNativeBuild/
+
+# Keystores / Firmas / Variables
+*.jks
+*.keystore
+signing/*
+**/keystore.properties
+*.pem
+*.p12
+.env
+.env.*
+
+# Capturas y artefactos
+captures/
+outputs/
+app/release/*.apk
+app/release/*.aab
+*.ap_ 
+
+# Python (Chaquopy / herramientas)
+__pycache__/
+*.pyc
+.venv/
+venv/
+pip-wheel-metadata/
+
+# SO / IDE
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
+Thumbs.db
+*.log
+
+# Datos locales / temporales
+tmp/
+temp/
+*.swp
+
