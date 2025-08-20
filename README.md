@@ -1,6 +1,6 @@
 # NowPlayingExporterPy
 
-<img width="1024" height="1024" alt="image" src="https://github.com/user-attachments/assets/13ed17a1-abac-45b2-8c12-cc99a66d0ff3" />
+![NowPlayingExporterPy (1)](https://github.com/user-attachments/assets/162df03c-33f2-4275-89f1-eebd064d7c77)
 
 
 Exporta el historial de **Now Playing / Está sonando** (Android System Intelligence) a **CSV** directamente desde Android.  
