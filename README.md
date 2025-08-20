@@ -1,49 +1,61 @@
-# Now Playing Exporter (Python inside APK)
+# NowPlayingExporterPy
 
-App Android que **integra tu script de exportación en Python** para extraer el historial de *Now Playing* (Android System Intelligence) y guardarlo como **CSV** en `Descargas`. Dedupe opcional.
+Exporta el historial de **Now Playing / Está sonando** (Android System Intelligence) a **CSV** directamente desde Android.  
+Incluye **deduplicación opcional** (por intervalos de tiempo) para eliminar líneas repetidas en y **compartir** el CSV generado.
 
-- Lógica Python basada en tu [`nowplaying_export.py`] y [`dedupe_nowplaying.py`]. :contentReference[oaicite:2]{index=2} :contentReference[oaicite:3]{index=3}
-- La copia desde `/data/data/...` se hace con **root** (libsu) y la APK **no requiere Termux**.
+> **Requiere root.** La base de datos de ASI es privada del sistema y no es accesible sin privilegios elevados (root).
+
+---
+
+## Características
+- ✅ Exportación a **CSV** en `Descargas` (vía MediaStore).
+- ✅ **Deduplicación** por ventanas de tiempo (p. ej., 10 min).
+- ✅ **Compartir** el CSV desde la app.
+- ✅ UI Material minimalista, modo oscuro.
+- ✅ Reutiliza scripts Python (Chaquopy) para la lógica de export/dedupe.
+
+---
+
+## Cómo funciona (resumen técnico)
+1. **Root** (libsu) copia la base de datos privada de ASI (`history_db`) a la sandbox de la app.
+   - Rutas candidatas (ejemplos):  
+     ```
+     /data/data/com.google.android.as/databases/history_db
+     /data/user_de/0/com.google.android.as/databases/history_db
+     /data/data/com.google.android.as.oss/databases/history_db
+     ...
+     ```
+2. **Chaquopy** ejecuta `np_export.py` para leer SQLite y generar el **CSV** temporal.
+3. (Opcional) `np_dedupe.py` aplica **deduplicación** por tiempo.
+4. La app mueve el CSV final a **Descargas** con nombre `now_playing_export_YYYYMMDD_HHMMSS[_dedup].csv`.
+5. Botón/acción para **compartir** el CSV (intent estándar).
+
+---
 
 ## Requisitos
+- Probado en Andorid 16 en Pixel usando KernelSU Next con ASI → ✅ funciona.
+- Esperado (no verificado): Android 12–15 en Pixel con ASI debería funcionar (las rutas de la DB suelen ser alguna de estas, previamente mencionadas en el punto 1:
 
-- Android 9+ (minSdk 28).
-- Dispositivo **rooteado** (Magisk, KernelSU, KSU Next o aPatch).
-- *Now Playing* activo (`com.google.android.as` o `.as.oss`).
+    /data/data/com.google.android.as/databases/history_db,
+    /data/user_de/0/com.google.android.as/databases/history_db,
+    /data/data/com.google.android.as.oss/databases/history_db),
 
-> **Sin root no es posible**: la DB está en `/data/data/...`. Shizuku sin root no da acceso a esa ruta.
+   pero no garantizado. 
 
-## Cómo compilar
+- **Root** (Magisk, KernelSU/KSU Next, aPatch).
+- Android System Intelligence (o equivalente) instalado.
+- Android Studio (Arctic Fox+), JDK 17+.
 
-1. Clona el repo y ábrelo en Android Studio (AGP 8.5, Kotlin 1.9).
-2. Sincroniza Gradle. No hay dependencias pip.
-3. Conecta el Pixel rooteado y pulsa *Run*.
+---
 
-## Uso
+## Compilación
+### Opción Android Studio
+- Abrir el proyecto.
+- **Build > Make Project** o **Run**.
 
-1. Abre **Now Playing Exporter**.
-2. Verás *Root OK*. Pulsa **Exportar**.
-3. Opcional: marca **Deduplicar (10 min)** para eliminar repeticiones cercanas.
-4. El archivo se guarda en **Descargas** como `now_playing_export_YYYYMMDD_HHMMSS.csv` (o `_dedup_10min.csv`).
-5. Usa **Compartir** para enviarlo.
+### Opción CLI
+```bash
+./gradlew :app:assembleDebug
+# o
+./gradlew :app:assembleRelease
 
-## ¿Qué hace internamente?
-
-1. **RootHelper** copia la DB `history_db` desde rutas conocidas a `cacheDir/np_history.db`.
-2. Kotlin llama al módulo Python `np_export.export_csv(db, tmpCsv)` que:
-    - Detecta tablas/columnas y extrae `artist`, `title`, `timestamp` (convierte a ISO UTC).
-    - Usa `display` como *fallback* si faltan artista/título.
-3. Si está activado, llama a `np_dedupe.dedupe_csv(tmpCsv, dedupCsv, 10)`.
-4. Mueve el CSV a **Descargas** usando **MediaStore**.
-5. La app nunca sube datos: todo es **local**.
-
-## Rutas de DB buscadas
-
-- `/data/data/com.google.android.as/databases/history_db`
-- `/data/user_de/0/com.google.android.as/databases/history_db`
-- `/data/data/com.google.android.as.oss/databases/history_db`
-- `/data/user_de/0/com.google.android.as.oss/databases/history_db`
-- `/data/data/com.google.intelligence.sense/databases/history_db`
-
-## Licencia
-MIT
