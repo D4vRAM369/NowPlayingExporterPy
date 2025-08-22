@@ -1,6 +1,17 @@
 <resources>
+    <!-- Nombre oficial de la app (launcher) -->
     <string name="app_name">NowPlayingExporterPy</string>
+    <!-- Título de la app visible en UI -->
     <string name="app_title">Now Playing Exporter</string>
-    <string name="NPExporterPy">NowPlayingExporterPy</string>
-    <string name="by_d4vram">by D4vRAM</string>
+    <!-- Mi nick como Dev -->
+    <string name="by_D4vRAM">by D4vRAM</string>
+
+    <!-- nuevos -->
+    <string name="status_ready_title">Listo para exportar</string>
+    <string name="status_ready_subtitle">Pulsa Exportar para generar el CSV en Descargas.</string>
+    <string name="btn_export">Exportar</string>
+    <string name="btn_share">Compartir</string>
+    <string name="check_dedupe_10m">Deduplicar (10 min)</string>
+    <string name="note_root_required">⚠️ Permisos de Root necesarios</string>
+    <string name="cd_share_last_csv">Compartir último CSV</string>
 </resources>

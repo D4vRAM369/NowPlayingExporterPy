@@ -28,7 +28,7 @@
                 android:id="@+id/tvAppTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="NowPlayingExporterPy"
+                android:text="@string/app_title"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:textColor="@color/fg_primary"
@@ -37,8 +37,7 @@
                 android:fontFamily="@font/inter_semibold"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_goneMarginTop="0dp"/>
+                app:layout_constraintEnd_toEndOf="parent"/>
 
             <!-- Icono nota musical arriba derecha alineado con el título -->
             <ImageView
@@ -47,7 +46,7 @@
                 android:layout_height="22dp"
                 android:src="@drawable/ic_music_note"
                 android:alpha="0.9"
-                android:contentDescription="@string/app_name"
+                android:contentDescription="@null"
                 app:layout_constraintTop_toTopOf="@id/tvAppTitle"
                 app:layout_constraintBottom_toBottomOf="@id/tvAppTitle"
                 app:layout_constraintEnd_toEndOf="parent"/>
@@ -57,7 +56,7 @@
                 android:id="@+id/tvBrand"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="by D4vRAM"
+                android:text="@by_D4vRAM"
                 android:textSize="13sp"
                 android:textColor="@color/fg_muted"
                 android:letterSpacing="0.015"
@@ -100,7 +99,7 @@
                     android:id="@+id/tvStatus"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Listo para exportar"
+                    android:text="@string/status_ready_title"
                     android:textColor="@color/fg_primary"
                     android:textSize="16sp"
                     android:fontFamily="@font/inter_semibold"/>
@@ -110,7 +109,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Pulsa Exportar para generar el CSV en Descargas."
+                    android:text="@strings/status_ready_subtitle"
                     android:textColor="@color/fg_muted"
                     android:textSize="12sp"
                     android:fontFamily="@font/inter"/>
@@ -134,7 +133,7 @@
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="1"
-                android:text="Exportar"
+                android:text="@string/btn_export"
                 app:strokeColor="@color/accent"
                 app:iconGravity="textStart"/>
 
@@ -147,7 +146,7 @@
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="1"
-                android:text="Compartir"
+                android:text="@string/btn_share"
                 app:backgroundTint="@color/accent"/>
         </LinearLayout>
 
@@ -156,7 +155,7 @@
             android:id="@+id/cbDedupe"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Deduplicar (10 min)"
+            android:text="@string/check_dedupe_10m"
             android:textColor="@color/fg_primary"
             app:useMaterialThemeColors="true"
             android:layout_marginTop="12dp"
@@ -168,7 +167,7 @@
             android:id="@+id/tvRootNote"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="⚠️ Permisos de Root necesarios"
+            android:text="@strings/note_root_required"
             android:textSize="12sp"
             android:textColor="@color/fg_muted"
             android:gravity="center"
@@ -215,7 +214,7 @@
         android:id="@+id/fabShare"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:contentDescription="Compartir último CSV"
+        android:contentDescription="@string/cd_share_last_csv"
         android:visibility="gone"
         app:srcCompat="@android:drawable/ic_menu_share"
         app:tint="@android:color/white"
