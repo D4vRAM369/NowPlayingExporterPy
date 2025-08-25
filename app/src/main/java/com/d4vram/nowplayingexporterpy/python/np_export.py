@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-# Basado en nowplaying_export.py de Brian: se elimina la copia con su y
-# se expone una función export_csv(db_path, out_csv_path).
 import csv, datetime as dt, re, sqlite3
 from pathlib import Path
 

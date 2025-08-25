@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# Dedupe funcional como librería: dedupe_csv(in_path, out_path, window_min=10, exact=False)
 import csv, re
 from datetime import datetime, timezone, timedelta
 
