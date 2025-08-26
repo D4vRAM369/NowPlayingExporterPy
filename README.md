@@ -3,10 +3,10 @@
 ![NowPlayingExporterPy (1)](https://github.com/user-attachments/assets/162df03c-33f2-4275-89f1-eebd064d7c77)
 
 
-Exporta el historial de **Now Playing / Está sonando** (Android System Intelligence) a **CSV** directamente desde Android.  
-Incluye **deduplicación opcional** (por intervalos de tiempo) para eliminar líneas repetidas en y **compartir** el CSV generado.
+Exporta el historial de **Now Playing / Está sonando** (Android System Intelligence) de los dispositivos Google Pixel a **CSV** directamente desde Android.  
+Incluye **deduplicación opcional** (por intervalos de tiempo) para eliminar líneas repetidas y un botón para **compartir** el CSV generado.
 
-> **Requiere root.** La base de datos de ASI es privada del sistema y no es accesible sin privilegios elevados (root).
+> **Requiere root.** La base de datos de ASI es privada del sistema y no es accesible sin privilegios elevados (root). Por tanto asegurate de concederle permisos de superusuario en Magisk, KSU o aPatch a la aplicación antes de usarla, y reinicia el móvil, de lo contrario te dará error.
 
 ---
 
@@ -29,7 +29,7 @@ Incluye **deduplicación opcional** (por intervalos de tiempo) para eliminar lí
      ...
      ```
 2. **Chaquopy** ejecuta `np_export.py` para leer SQLite y generar el **CSV** temporal.
-3. (Opcional) `np_dedupe.py` aplica **deduplicación** por tiempo.
+3. (Opcional) `np_dedupe.py` aplica **deduplicación** por tiempo (**recomendada** para evitar múltiples líneas repetidas que salen incluso sin corresponderse a las veces que fueron reproducidas, por el momento desconozco cual es el error por el que ocurre esto).
 4. La app mueve el CSV final a **Descargas** con nombre `now_playing_export_YYYYMMDD_HHMMSS[_dedup].csv`.
 5. Botón/acción para **compartir** el CSV (intent estándar).
 
@@ -45,9 +45,9 @@ Incluye **deduplicación opcional** (por intervalos de tiempo) para eliminar lí
 
    pero no garantizado. 
 
-- **Root** (Magisk, KernelSU/KSU Next, aPatch).
+- **Root** (Magisk, KernelSU/KSU Next, aPatch) y permisos a la apk.
 - Android System Intelligence (o equivalente) instalado.
-- Android Studio (Arctic Fox+), JDK 17+.
+
 
 ---
 
