@@ -1,6 +1,13 @@
 <resources>
-    <string name="app_name">NowPlayingExporterPy</string>
-    <string name="app_title">Now Playing Exporter</string>
-    <string name="NPExporterPy">NowPlayingExporterPy</string>
+    <string name="app_name">NPEpy</string>
+    <string name="app_title">NowPlayingExporterPy</string>
+    <string name="app_title_short">NPEpy</string>
+    <string name="NPExporterPy">NPEpy</string>
     <string name="by_d4vram">by D4vRAM</string>
+    <string name="ready_to_export">Listo para exportar</string>
+    <string name="export_instructions">Pulsa Exportar para generar el CSV en Descargas.</string>
+    <string name="export_button">Exportar</string>
+    <string name="share_button">Compartir</string>
+    <string name="deduplicate_option">Deduplicar (10 min)</string>
+    <string name="root_permissions_needed">Permisos de Root necesarios</string>
 </resources>

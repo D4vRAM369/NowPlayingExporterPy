@@ -9,7 +9,7 @@
 
     <TextView
         android:id="@+id/tvStatus"
-        android:text="Listo."
+        android:text="@string/ready_to_export"
         android:textColor="#E5E7EB"
         android:textSize="20sp"
         android:textStyle="bold"
@@ -33,7 +33,7 @@
 
         <Button
             android:id="@+id/btnExport"
-            android:text="Exportar"
+            android:text="@string/export_button"
             android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="48dp"/>
@@ -42,7 +42,7 @@
 
         <Button
             android:id="@+id/btnShare"
-            android:text="Compartir"
+            android:text="@string/share_button"
             android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="48dp"/>
@@ -52,7 +52,7 @@
         android:id="@+id/cbDedupe"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Deduplicar (10 min)"
+        android:text="@string/deduplicate_option"
         android:textColor="#E5E7EB"
         android:layout_marginTop="8dp"/>
 

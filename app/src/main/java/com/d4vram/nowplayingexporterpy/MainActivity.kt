@@ -1,4 +1,4 @@
-package com.d4vram.np.exporter
+package com.d4vram.nowplayingexporterpy
 
 import android.content.ContentValues
 import android.content.Intent

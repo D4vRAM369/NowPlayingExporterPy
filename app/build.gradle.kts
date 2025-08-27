@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.d4vram.np.exporter"
+    namespace = "com.d4vram.nowplayingexporterpy"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.d4vram.np.exporter"
+        applicationId = "com.d4vram.nowplayingexporterpy"
         minSdk = 28
         targetSdk = 35
         versionCode = 1
