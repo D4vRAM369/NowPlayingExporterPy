@@ -102,6 +102,7 @@ def export_from_table(conn, table, mapping, bucket):
         n += 1
     return n
 
+# Modificación en np_export.py
 def export_csv(db_path, out_csv_path):
     conn = connect_sqlite(db_path)
     try:
@@ -109,18 +110,37 @@ def export_csv(db_path, out_csv_path):
         hist = pick_history_tables(tables)
         rows = []
         total = 0
-        for name,_ in hist:
+        for name, _ in hist:
             mapping = find_best_mapping(get_columns(conn, name))
             total += export_from_table(conn, name, mapping, rows)
+
         if total == 0:
             raise RuntimeError("No se encontraron filas exportables.")
-        # union de cabeceras
-        headers = sorted({k for r in rows for k in r.keys()})
+
+        # Definir las 4 columnas fijas
+        fixed_headers = ["Artista/Grupo", "Canción", "Timestamp", "Favoritos"]
+
+        # Preparar las filas con las columnas fijas, reemplazando las originales
+        processed_rows = []
+        for row in rows:
+            new_row = {
+                "Artista/Grupo": row.get("artist", "") or row.get("display_fallback", "").split(" - ")[0] if row.get("display_fallback") else "",
+                "Canción": row.get("title", "") or row.get("display_fallback", "").split(" - ")[1] if row.get("display_fallback") and " - " in row.get("display_fallback", "") else "",
+                "Timestamp": row.get("timestamp_iso", ""),
+                "Favoritos": ""  # Vacío por ahora, a definir si hay datos
+            }
+            processed_rows.append(new_row)
+
+        # Ordenar por Timestamp (de más antiguo a reciente)
+        processed_rows.sort(key=lambda x: _parse_iso(x["Timestamp"]) or dt.datetime.min)
+
+        # Escribir el CSV con cabeceras sin HTML, para compatibilidad
         with open(out_csv_path, "w", newline="", encoding="utf-8") as f:
-            w = csv.DictWriter(f, fieldnames=headers)
-            w.writeheader()
-            for r in rows: w.writerow(r)
-        return len(rows)
+            writer = csv.DictWriter(f, fieldnames=fixed_headers, extrasaction='ignore')
+            writer.writeheader()  # Cabeceras sin formato, se pueden negritar manualmente
+            writer.writerows(processed_rows)
+
+        return len(processed_rows)
     finally:
         try: conn.close()
         except Exception: pass

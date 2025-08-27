@@ -102,25 +102,152 @@ def export_from_table(conn, table, mapping, bucket):
         n += 1
     return n
 
-def export_csv(db_path, out_csv_path):
-    conn = connect_sqlite(db_path)
+def debug_database_structure(db_path):
+    """Función para debuggear la estructura real de la DB"""
     try:
+        print("🔍 INICIANDO DEBUGGING...")
+        conn = connect_sqlite(db_path)
+        print("✅ Conexión a DB exitosa")
+        
         tables = list_tables(conn)
+        print(f"📊 Encontradas {len(tables)} tablas")
+        
+        for name, ddl in tables:
+            print(f"\n📋 TABLA: {name}")
+            print(f"DDL: {ddl[:200]}...")
+            
+            cols = get_columns(conn, name)
+            print(f"Columnas: {cols}")
+            
+            # Mostrar algunas filas de ejemplo
+            try:
+                cur = conn.execute(f"SELECT * FROM {name} LIMIT 3")
+                sample_rows = cur.fetchall()
+                print(f"Muestra de datos:")
+                for i, row in enumerate(sample_rows):
+                    print(f"  Fila {i+1}: {row}")
+            except Exception as e:
+                print(f"Error al leer datos: {e}")
+                
+        conn.close()
+        print("✅ Debugging completado")
+        
+    except Exception as e:
+        print(f"❌ ERROR en debugging: {e}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
+
+def _coerce_bool_like(value):
+    if value is None:
+        return ""
+    s = str(value).strip().lower()
+    if s in ("1", "true", "yes", "y", "t", "si", "sí"):  # soporta español
+        return "1"
+    if s in ("0", "false", "no", "n", "f"):
+        return "0"
+    return s  # deja tal cual si no es interpretable
+
+
+def _normalize_rows_for_simple_csv(rows):
+    """Convierte registros heterogéneos en filas simples con 4 columnas.
+    - artist: tal cual si existe
+    - title: usa title, o intenta partir display_fallback en "artista - título"
+    - timestamp_iso: tal cual si existe
+    - favorite: intenta deducir de cualquier extra que contenga 'fav'
+    """
+    normalized = []
+    for r in rows:
+        artist = (r.get("artist") or "").strip()
+        title = (r.get("title") or "").strip()
+        if not title:
+            disp = (r.get("display_fallback") or "").strip()
+            if disp:
+                parts = re.split(r"\s+[-—–]\s+", disp, maxsplit=1)
+                if len(parts) == 2:
+                    # Si no hay artista, intenta tomar el de display
+                    if not artist:
+                        artist = parts[0].strip()
+                    title = parts[1].strip() or title
+                else:
+                    # Si no tiene separador, como último recurso usa todo
+                    if not title:
+                        title = disp
+        ts = (r.get("timestamp_iso") or "").strip()
+
+        # Derivar favorito: busca cualquier clave que contenga 'fav'
+        fav_val = ""
+        for k, v in r.items():
+            if "fav" in k.lower():
+                fav_val = _coerce_bool_like(v)
+                break
+
+        normalized.append({
+            "artist": artist,
+            "title": title,
+            "timestamp_iso": ts,
+            "favorite": fav_val,
+        })
+    return normalized
+
+
+def export_csv(db_path, out_csv_path):
+    print("🚀 INICIANDO EXPORTACIÓN CSV...")
+    print(f"📁 DB Path: {db_path}")
+    print(f"📄 CSV Output: {out_csv_path}")
+    
+    try:
+        print("🔍 INICIANDO DEBUGGING...")
+        debug_database_structure(db_path)
+        print("✅ Debugging completado exitosamente")
+    except Exception as e:
+        print(f"❌ ERROR en debugging: {e}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
+    
+    print("🔗 Conectando a la base de datos...")
+    conn = connect_sqlite(db_path)
+    print("✅ Conexión exitosa")
+    
+    try:
+        print("📋 Listando tablas...")
+        tables = list_tables(conn)
+        print(f"📊 Encontradas {len(tables)} tablas: {[t[0] for t in tables]}")
+        
         hist = pick_history_tables(tables)
+        print(f"🎯 Tablas de historial seleccionadas: {[h[0] for h in hist]}")
+        
         rows = []
         total = 0
-        for name,_ in hist:
+        for name, _ in hist:
+            print(f"🔄 Procesando tabla: {name}")
             mapping = find_best_mapping(get_columns(conn, name))
-            total += export_from_table(conn, name, mapping, rows)
+            print(f"🗺️ Mapeo encontrado: {mapping}")
+            count = export_from_table(conn, name, mapping, rows)
+            total += count
+            print(f"📈 Exportadas {count} filas de {name}")
+        
+        print(f"📊 Total de filas exportadas: {total}")
+        
         if total == 0:
             raise RuntimeError("No se encontraron filas exportables.")
-        # union de cabeceras
-        headers = sorted({k for r in rows for k in r.keys()})
+        
+        # Normalizar a 4 columnas fijas en orden deseado
+        simple_rows = _normalize_rows_for_simple_csv(rows)
+        headers = ["artist", "title", "timestamp_iso", "favorite"]
+        print(f"📝 Headers del CSV (fijos): {headers}")
+        
         with open(out_csv_path, "w", newline="", encoding="utf-8") as f:
             w = csv.DictWriter(f, fieldnames=headers)
             w.writeheader()
-            for r in rows: w.writerow(r)
-        return len(rows)
+            for r in simple_rows:
+                w.writerow(r)
+        
+        print(f"💾 CSV guardado exitosamente en: {out_csv_path}")
+        return len(simple_rows)
+        
     finally:
-        try: conn.close()
-        except Exception: pass
+        try: 
+            conn.close()
+            print("🔒 Conexión cerrada")
+        except Exception as e:
+            print(f"⚠️ Error al cerrar conexión: {e}")
