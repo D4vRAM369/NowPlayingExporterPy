@@ -3,18 +3,26 @@ import csv
 import os
 import yt_dlp
 
-def download_songs(csv_path, download_folder):
+def download_songs(csv_path, download_folder, callback=None):
     """
     Downloads songs from a CSV file using yt-dlp.
 
     Args:
         csv_path (str): The absolute path to the CSV file.
         download_folder (str): The absolute path to the folder where songs will be saved.
-
-    Returns:
-        dict: A dictionary with two keys, "success" and "errors", containing lists of
-              song queries that were processed.
+        callback (object): A callback object with an onProgressUpdate method.
     """
+    
+    def progress_hook(d):
+        if callback:
+            if d['status'] == 'downloading':
+                percent = d.get('_percent_str', '0.0%')
+                speed = d.get('_speed_str', '0.0B/s')
+                eta = d.get('_eta_str', '00:00')
+                callback.onProgressUpdate(f"    -> Descargando: {percent} a {speed}, ETA: {eta}")
+            elif d['status'] == 'finished':
+                callback.onProgressUpdate(f"  -> Descarga completa: {d['filename']}")
+
     results = {"success": [], "errors": []}
 
     # Ensure the download folder exists
@@ -28,6 +36,7 @@ def download_songs(csv_path, download_folder):
         'default_search': 'ytsearch',
         'noplaylist': True,
         'nocheckcertificate': True, # Can help avoid some SSL/TLS verification errors
+        'progress_hooks': [progress_hook],
     }
 
     try:
@@ -45,12 +54,14 @@ def download_songs(csv_path, download_folder):
                     continue
 
                 try:
-                    print(f"Downloading: {search_query}")
+                    if callback:
+                        callback.onProgressUpdate(f"Buscando: {search_query}")
                     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                         ydl.download([search_query])
                     results["success"].append(search_query)
                 except Exception as e:
-                    print(f"Error downloading {search_query}: {e}")
+                    if callback:
+                        callback.onProgressUpdate(f"Error descargando {search_query}: {e}")
                     results["errors"].append({"query": search_query, "error": str(e)})
 
     except FileNotFoundError:

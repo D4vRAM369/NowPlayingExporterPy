@@ -21,7 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), PythonCallback {
 
     private lateinit var tvStatus: TextView
     private lateinit var tvSubtitle: TextView
@@ -109,6 +109,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onProgressUpdate(message: String) {
+        logOnUi(message)
+    }
+
     private fun doExport() {
         runCatching {
             logOnUi("Buscando DB de Now Playing…")
@@ -120,7 +124,7 @@ class MainActivity : AppCompatActivity() {
             logOnUi("DB copiada a sandbox.")
 
             val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-            val tmpCsv = File(cacheDir, "now_playing_export_${stamp}.csv").absolutePath
+            val tmpCsv = File(cacheDir, "now_playing_export_${'$'}stamp.csv").absolutePath
 
             val py = Python.getInstance()
             val rows = py.getModule("np_export")
@@ -130,7 +134,7 @@ class MainActivity : AppCompatActivity() {
 
             var finalCsvPath = tmpCsv
             if (cbDedupe.isChecked) {
-                val dedupPath = File(cacheDir, "now_playing_export_${stamp}_dedup_10min.csv").absolutePath
+                val dedupPath = File(cacheDir, "now_playing_export_${'$'}stamp_dedup_10min.csv").absolutePath
                 py.getModule("np_dedupe")
                     .callAttr("dedupe_csv", tmpCsv, dedupPath, 10, false)
                 logOnUi("Deduplicación 10 min aplicada.")
@@ -173,14 +177,14 @@ class MainActivity : AppCompatActivity() {
                 logOnUi("--- INICIO DE DESCARGA ---")
             }
 
-            val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
+            val downloadDir = File(applicationContext.getExternalFilesDir(Environment.DIRECTORY_MUSIC), "NPEpy_download_songs")
             if (!downloadDir.exists()) {
                 downloadDir.mkdirs()
             }
 
             val py = Python.getInstance()
             val downloader = py.getModule("np_download")
-            val results: PyObject = downloader.callAttr("download_songs", csvPath, downloadDir.absolutePath)
+            val results: PyObject = downloader.callAttr("download_songs", csvPath, downloadDir.absolutePath, this)
 
             val resultMap = results.asMap()
             val successList = resultMap[PyObject.fromJava("success")]?.asList()
