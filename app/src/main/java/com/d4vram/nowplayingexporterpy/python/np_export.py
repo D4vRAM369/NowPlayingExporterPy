@@ -62,47 +62,6 @@ def to_iso(ts_value):
         t = t / 1000.0
     return dt.datetime.utcfromtimestamp(t).isoformat() + "Z"
 
-def export_from_table(conn, table, mapping, bucket):
-    cols = get_columns(conn, table)
-    sel = set(filter(None, [mapping["artist"], mapping["title"], mapping["when"], mapping["display"]]))
-    for x in mapping["extras"]:
-        sel.add(x)
-    if not sel: return 0
-    cur = conn.execute(f"SELECT {', '.join(sel)} FROM {table}")
-    fetched = cur.fetchall()
-    names = [d[0] for d in cur.description]
-    n = 0
-    for row in fetched:
-        rec = dict(zip(names, row))
-        artist = rec.get(mapping["artist"], "") if mapping["artist"] else ""
-        title  = rec.get(mapping["title"], "")  if mapping["title"]  else ""
-        when   = rec.get(mapping["when"], "")   if mapping["when"]   else ""
-        disp   = rec.get(mapping["display"], "")if mapping["display"]else ""
-
-        if (not artist or not title) and disp:
-            parts = re.split(r"\s+[-—–]\s+", str(disp), maxsplit=1)
-            if len(parts)==2:
-                if not artist: artist = parts[0]
-                if not title:  title  = parts[1]
-
-        iso_time = to_iso(when) if str(when).strip() else ""
-        extras = {f"extra_{k}":("" if v is None else str(v)) for k,v in rec.items()
-                  if k in set(mapping["extras"])}
-
-        if not (artist or title or disp):
-            continue
-
-        bucket.append({
-            "timestamp_iso": iso_time,
-            "artist": str(artist) if artist is not None else "",
-            "title":  str(title)  if title  is not None else "",
-            "display_fallback": str(disp) if disp is not None else "",
-            **extras
-        })
-        n += 1
-    return n
-
-# Modificación en np_export.py
 def export_csv(db_path, out_csv_path):
     conn = connect_sqlite(db_path)
     try:
@@ -120,24 +79,39 @@ def export_csv(db_path, out_csv_path):
         # Definir las 4 columnas fijas
         fixed_headers = ["Artista/Grupo", "Canción", "Timestamp", "Favoritos"]
 
-        # Preparar las filas con las columnas fijas, reemplazando las originales
+        # Preparar las filas con las columnas fijas
         processed_rows = []
         for row in rows:
+            display_fallback = row.get("display_fallback", "")
+            artist = row.get("artist", "")
+            title = row.get("title", "")
+
+            # Extraer de display_fallback si necesario
+            if not artist or not title:
+                parts = re.split(r"\s+[-—–]\s+", display_fallback, maxsplit=1)
+                if len(parts) == 2:
+                    artist = parts[0].strip()
+                    title = parts[1].strip()
+
+            # Manejar Favoritos (asumiendo que es booleano o string en extras)
+            favorite = row.get("extra_favorite", "") or row.get("favorite", "")
+            favoritos = "Sí" if favorite in [1, "1", True, "true"] else "No" if favorite else ""
+
             new_row = {
-                "Artista/Grupo": row.get("artist", "") or row.get("display_fallback", "").split(" - ")[0] if row.get("display_fallback") else "",
-                "Canción": row.get("title", "") or row.get("display_fallback", "").split(" - ")[1] if row.get("display_fallback") and " - " in row.get("display_fallback", "") else "",
+                "Artista/Grupo": artist,
+                "Canción": title,
                 "Timestamp": row.get("timestamp_iso", ""),
-                "Favoritos": ""  # Vacío por ahora, a definir si hay datos
+                "Favoritos": favoritos
             }
             processed_rows.append(new_row)
 
-        # Ordenar por Timestamp (de más antiguo a reciente)
+        # Ordenar por Timestamp ascendente (de antiguo a reciente)
         processed_rows.sort(key=lambda x: _parse_iso(x["Timestamp"]) or dt.datetime.min)
 
-        # Escribir el CSV con cabeceras sin HTML, para compatibilidad
+        # Escribir CSV con cabeceras fijas
         with open(out_csv_path, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=fixed_headers, extrasaction='ignore')
-            writer.writeheader()  # Cabeceras sin formato, se pueden negritar manualmente
+            writer = csv.DictWriter(f, fieldnames=fixed_headers)
+            writer.writeheader()
             writer.writerows(processed_rows)
 
         return len(processed_rows)

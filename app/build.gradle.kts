@@ -42,6 +42,14 @@ android {
     kotlinOptions { jvmTarget = "17" }
 }
 
+chaquopy {
+    defaultConfig {
+        pip {
+            install("yt-dlp")
+        }
+    }
+}
+
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")

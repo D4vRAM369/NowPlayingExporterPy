@@ -44,52 +44,56 @@ def _write_rows(path, fieldnames, rows):
         w.writeheader()
         for row in rows: w.writerow(row)
 
-def dedupe_csv(in_path, out_path, window_min=10, exact=False):
-    fieldnames, rows = _load_rows(in_path)
-    for col in ("timestamp_iso","artist","title","display_fallback"):
-        if col not in fieldnames:
-            fieldnames.append(col)
-            for row in rows: row.setdefault(col, "")
+ef dedupe_csv(in_path, out_path, window_min=10, exact=False):
+fieldnames, rows = _load_rows(in_path)
+# Asegurar columnas fijas (ignorar extras)
+fixed_fieldnames = ["Artista/Grupo", "Canción", "Timestamp", "Favoritos"]
+for col in fixed_fieldnames:
+    if col not in fieldnames:
+        fieldnames.append(col)
+        for row in rows: row.setdefault(col, "")
 
-    for row in rows:
-        if not (row.get("artist") or "").strip() or not (row.get("title") or "").strip():
-            a,t = _split_display(row.get("display_fallback",""))
-            if a and not row.get("artist"): row["artist"]=a
-            if t and not row.get("title"):  row["title"]=t
+# Split si necesario (pero ya debería estar hecho en export)
+for row in rows:
+    if not row.get("Artista/Grupo") or not row.get("Canción"):
+        a, t = _split_display(row.get("display_fallback", ""))  # Si aún hay fallback
+        if a and not row.get("Artista/Grupo"): row["Artista/Grupo"] = a
+        if t and not row.get("Canción"): row["Canción"] = t
 
-    original_count = len(rows)
+original_count = len(rows)
 
-    seen_exact, exact_rows = set(), []
-    for row in rows:
-        key = tuple((row.get(c,"") or "").strip() for c in ["timestamp_iso","artist","title","display_fallback"])
-        if key in seen_exact: continue
-        seen_exact.add(key)
-        exact_rows.append(row)
-    if exact:
-        _write_rows(out_path, fieldnames, exact_rows)
-        return {"original":original_count, "kept":len(exact_rows), "mode":"exact"}
+seen_exact, exact_rows = set(), []
+for row in rows:
+    key = tuple((row.get(c, "") or "").strip() for c in fixed_fieldnames)
+    if key in seen_exact: continue
+    seen_exact.add(key)
+    exact_rows.append(row)
+if exact:
+    _write_rows(out_path, fixed_fieldnames, exact_rows)
+    return {"original":original_count, "kept":len(exact_rows), "mode":"exact"}
 
-    window = timedelta(minutes=max(0, int(window_min)))
-    rows_sorted = sorted(exact_rows, key=lambda r: (_norm(r.get("artist","")),
-                                                   _norm(r.get("title","")),
-                                                   (_parse_iso(r.get("timestamp_iso","")) or datetime.max).timestamp()))
-    kept, last_time = [], {}
-    for row in rows_sorted:
-        a, t = _norm(row.get("artist","")), _norm(row.get("title",""))
-        ts = _parse_iso(row.get("timestamp_iso",""))
-        key = (a, t)
-        if ts is None:
-            subkey = (a, t, _norm(row.get("display_fallback","")))
-            s = last_time.get(key)
-            if not isinstance(s, set):
-                s=set(); last_time[key]=s
-            if subkey in s: continue
-            s.add(subkey); kept.append(row); continue
-        last = last_time.get(key)
-        if isinstance(last, datetime) and abs((ts-last)) <= window:
-            continue
-        kept.append(row); last_time[key]=ts
+window = timedelta(minutes=max(0, int(window_min)))
+rows_sorted = sorted(exact_rows, key=lambda r: (_norm(r.get("Artista/Grupo","")),
+                                                _norm(r.get("Canción","")),
+                                                (_parse_iso(r.get("Timestamp","")) or datetime.max).timestamp()))
+kept, last_time = [], {}
+for row in rows_sorted:
+    a, t = _norm(r.get("Artista/Grupo","")), _norm(r.get("Canción",""))
+    ts = _parse_iso(r.get("Timestamp",""))
+    key = (a, t)
+    if ts is None:
+        subkey = (a, t, _norm(r.get("Favoritos","")))  # Usar Favoritos como fallback simple
+        s = last_time.get(key)
+        if not isinstance(s, set):
+            s = set(); last_time[key] = s
+        if subkey in s: continue
+        s.add(subkey); kept.append(row); continue
+    last = last_time.get(key)
+    if isinstance(last, datetime) and abs((ts - last)) <= window:
+        continue
+    kept.append(row); last_time[key] = ts
 
-    kept_sorted = sorted(kept, key=lambda r: (_parse_iso(r.get("timestamp_iso","")) or datetime.min), reverse=True)
-    _write_rows(out_path, fieldnames, kept_sorted)
-    return {"original":original_count, "kept":len(kept_sorted), "mode":f"{window_min}min"}
+# Ordenar ascendente por Timestamp
+kept_sorted = sorted(kept, key=lambda r: (_parse_iso(r.get("Timestamp","")) or datetime.min))
+_write_rows(out_path, fixed_fieldnames, kept_sorted)
+return {"original":original_count, "kept":len(kept_sorted), "mode":f"{window_min}min"}

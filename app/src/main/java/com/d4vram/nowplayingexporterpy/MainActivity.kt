@@ -9,12 +9,17 @@ import android.provider.MediaStore
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.chaquo.python.PyObject
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
@@ -23,11 +28,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvLog: TextView
     private lateinit var btnExport: Button
     private lateinit var btnShare: Button
+    private lateinit var btnDownload: Button
     private lateinit var fabShare: FloatingActionButton
     private lateinit var cbDedupe: CheckBox
 
     private var lastCsvUri: Uri? = null
     private var lastCsvName: String? = null
+    private var lastCsvPath: String? = null
 
     private val candidates = listOf(
         "/data/data/com.google.android.as/databases/history_db",
@@ -47,6 +54,7 @@ class MainActivity : AppCompatActivity() {
         tvLog      = findViewById(R.id.tvLog)
         btnExport  = findViewById(R.id.btnExport)
         btnShare   = findViewById(R.id.btnShare)
+        btnDownload = findViewById(R.id.btnDownload)
         fabShare   = findViewById(R.id.fabShare)
         cbDedupe   = findViewById(R.id.cbDedupe)
 
@@ -59,51 +67,78 @@ class MainActivity : AppCompatActivity() {
         if (!Python.isStarted()) Python.start(AndroidPlatform(this))
 
         if (!RootHelper.isRootAvailable()) {
-            tvStatus.text = "Root NO disponible."
-            tvSubtitle.text = "Esta app requiere root para leer la DB privada de Android System Intelligence."
+            setStatus("Root NO disponible.", "Esta app requiere root para leer la DB privada de Android System Intelligence.")
             btnExport.isEnabled = false
+            btnDownload.isEnabled = false
             Toast.makeText(this, "Root no detectado", Toast.LENGTH_LONG).show()
             return
         }
 
-        tvStatus.text = "Listo para exportar"
-        tvSubtitle.text = "Pulsa Exportar para generar el CSV en Descargas."
+        setStatus("Listo para exportar", "Pulsa Exportar para generar el CSV en Descargas.")
 
-        btnExport.setOnClickListener { doExport() }
+        btnExport.setOnClickListener {
+            btnExport.isEnabled = false
+            btnDownload.isEnabled = false
+            lifecycleScope.launch {
+                try {
+                    withContext(Dispatchers.IO) { doExport() }
+                } finally {
+                    btnExport.isEnabled = true
+                    btnDownload.isEnabled = lastCsvPath != null
+                }
+            }
+        }
+
+        btnDownload.setOnClickListener {
+            val csvPath = lastCsvPath
+            if (csvPath == null) {
+                Toast.makeText(this, "Primero debes exportar un archivo CSV.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            btnExport.isEnabled = false
+            btnDownload.isEnabled = false
+            lifecycleScope.launch {
+                try {
+                    withContext(Dispatchers.IO) { doDownload(csvPath) }
+                } finally {
+                    btnExport.isEnabled = true
+                    btnDownload.isEnabled = true
+                }
+            }
+        }
     }
 
     private fun doExport() {
         runCatching {
-            log("Buscando DB de Now Playing…")
+            logOnUi("Buscando DB de Now Playing…")
             val src = RootHelper.findFirstExistingPath(candidates)
                 ?: error("No se encontró la DB en rutas conocidas.")
 
-            // Copiar a caché legible por la app
             val localDb = File(cacheDir, "np_history.db").absolutePath
             if (!RootHelper.copyFileAsRoot(src, localDb)) error("Falló la copia con root.")
-            log("DB copiada a sandbox.")
+            logOnUi("DB copiada a sandbox.")
 
-            // Salida temporal (luego movemos a Descargas)
             val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
             val tmpCsv = File(cacheDir, "now_playing_export_${stamp}.csv").absolutePath
 
-            // Llamar a Python: exportar
             val py = Python.getInstance()
             val rows = py.getModule("np_export")
                 .callAttr("export_csv", localDb, tmpCsv)
                 .toInt()
-            log("Exportadas $rows filas a temporal.")
+            logOnUi("Exportadas $rows filas a temporal.")
 
             var finalCsvPath = tmpCsv
             if (cbDedupe.isChecked) {
                 val dedupPath = File(cacheDir, "now_playing_export_${stamp}_dedup_10min.csv").absolutePath
                 py.getModule("np_dedupe")
                     .callAttr("dedupe_csv", tmpCsv, dedupPath, 10, false)
-                log("Deduplicación 10 min aplicada.")
+                logOnUi("Deduplicación 10 min aplicada.")
                 finalCsvPath = dedupPath
             }
 
-            // Guardar en Descargas (MediaStore)
+            this.lastCsvPath = finalCsvPath
+
             val nameOnly = File(finalCsvPath).name
             val uri = insertIntoDownloads(nameOnly, "text/csv")
             contentResolver.openOutputStream(uri)!!.use { out ->
@@ -112,19 +147,73 @@ class MainActivity : AppCompatActivity() {
             lastCsvUri = uri
             lastCsvName = nameOnly
 
-            tvStatus.text = "Exportación completada"
-            tvSubtitle.text = "$nameOnly (Descargas)"
-            fabShare.visibility = View.VISIBLE
-
-            Toast.makeText(this, "Listo: $nameOnly", Toast.LENGTH_LONG).show()
-            log("Guardado en Descargas como $nameOnly")
+            runOnUiThread {
+                setStatus("Exportación completada", "$nameOnly (Descargas)")
+                fabShare.visibility = View.VISIBLE
+                btnDownload.isEnabled = true
+                Toast.makeText(this, "Listo: $nameOnly", Toast.LENGTH_LONG).show()
+            }
+            logOnUi("Guardado en Descargas como $nameOnly")
 
         }.onFailure { e ->
             val msg = e.message ?: "Error desconocido"
-            tvStatus.text = "Error"
-            tvSubtitle.text = msg
-            fabShare.visibility = View.GONE
-            log("Error: $msg")
+            runOnUiThread {
+                setStatus("Error", msg)
+                fabShare.visibility = View.GONE
+                Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+            }
+            logOnUi("Error: $msg")
+        }
+    }
+
+    private fun doDownload(csvPath: String) {
+        runCatching {
+            runOnUiThread {
+                setStatus("Descargando...", "Obteniendo canciones con yt-dlp. Esto puede tardar.")
+                logOnUi("--- INICIO DE DESCARGA ---")
+            }
+
+            val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
+            if (!downloadDir.exists()) {
+                downloadDir.mkdirs()
+            }
+
+            val py = Python.getInstance()
+            val downloader = py.getModule("np_download")
+            val results: PyObject = downloader.callAttr("download_songs", csvPath, downloadDir.absolutePath)
+
+            val resultMap = results.asMap()
+            val successList = resultMap[PyObject.fromJava("success")]?.asList()
+            val errorList = resultMap[PyObject.fromJava("errors")]?.asList()
+
+            runOnUiThread {
+                val successCount = successList?.size ?: 0
+                val errorCount = errorList?.size ?: 0
+
+                setStatus("Descarga finalizada", "$successCount descargadas, $errorCount con errores.")
+                logOnUi("Descarga completada.")
+                logOnUi("Canciones descargadas: $successCount")
+                if (errorCount > 0) {
+                    logOnUi("Errores: $errorCount")
+                    errorList?.forEach { errorItem ->
+                        val errorMap = errorItem.asMap()
+                        val query = errorMap[PyObject.fromJava("query")]
+                        val errorMsg = errorMap[PyObject.fromJava("error")]
+                        logOnUi("  - Falló: $query -> $errorMsg")
+                    }
+                }
+                logOnUi("Archivos guardados en la carpeta 'Music'.")
+                logOnUi("--- FIN DE DESCARGA ---")
+                Toast.makeText(this, "Proceso de descarga terminado.", Toast.LENGTH_LONG).show()
+            }
+
+        }.onFailure { e ->
+            val msg = e.message ?: "Error desconocido en la descarga"
+            runOnUiThread {
+                setStatus("Error en descarga", msg)
+                Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+            }
+            logOnUi("Error crítico durante la descarga: $msg")
         }
     }
 
@@ -151,5 +240,14 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent.createChooser(intent, "Compartir CSV"))
     }
 
-    private fun log(msg: String) { tvLog.append(msg + "\n") }
+    private fun setStatus(title: String, subtitle: String) {
+        tvStatus.text = title
+        tvSubtitle.text = subtitle
+    }
+
+    private fun logOnUi(msg: String) {
+        runOnUiThread {
+            tvLog.append(msg + "\n")
+        }
+    }
 }
