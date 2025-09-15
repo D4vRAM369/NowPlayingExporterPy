@@ -17,7 +17,7 @@ Exports the **Now Playing** history (Android System Intelligence, ASI) from Goog
 
 ---
 
-## Paths and Formats
+## 📁 Paths and Formats
 
 * **ASI DB** (common examples):
 
@@ -37,7 +37,7 @@ Typical format: `.webm` (no FFmpeg post-processing). To listen to them on your p
 
 ---
 
-## How it works (technical summary)
+## 🚀🔍 How it works (technical summary)
 
 1. **Root (libsu)** copies `history_db` from ASI to the app sandbox.
 2. **Chaquopy (Python)** runs `np_export.py` to read SQLite and generate the temporary **CSV**.
@@ -47,7 +47,7 @@ Typical format: `.webm` (no FFmpeg post-processing). To listen to them on your p
 
 ---
 
-## Requirements
+## 📋 Requirements
 
 * **Root** (Magisk / KernelSU Next / aPatch).
 * **ASI** installed (Android System Intelligence).
@@ -55,7 +55,7 @@ Typical format: `.webm` (no FFmpeg post-processing). To listen to them on your p
 
 ---
 
-## Lessons learned (issues → solutions)
+## Lessons learned ✍️ (issues → solutions)
 
 1. **FFmpeg & `yt-dlp`**: Chaquopy does not provide FFmpeg via pip. `yt-dlp` can download native audio (`.webm`) **without FFmpeg**, so the false dependency was removed and “best audio” was configured.
 2. **Real-time progress**: Added a `PythonCallback` interface from Kotlin to receive logs/status from the Python script and display them in the UI.
@@ -64,7 +64,7 @@ Typical format: `.webm` (no FFmpeg post-processing). To listen to them on your p
 
 ---
 
-## Usage
+## 🚀 Usage
 
 1. **Install** the APK.
 2. **Grant root** when prompted.
@@ -103,7 +103,7 @@ If you see ,, use a comma as above.
 
 ---
 
-## Architecture and Technologies
+## ⚙️ Architecture and Technologies
 
 * **Kotlin (Android)**: UI + main logic.
 * **Chaquopy (Python)**: script execution (`np_export.py`, `np_dedupe.py`, `np_download.py`).
@@ -114,11 +114,17 @@ If you see ,, use a comma as above.
 
 ---
 
-## Build
+## 🛠️ Build
 
 ### Android Studio
 
 * Open the project and **Sync**.
 * **Build > Make Project** or **Run**.
 
-##
+### ⌨️ CLI
+
+```bash
+git clone <URL_REPO>
+cd NowPlayingExporterPy
+./gradlew :app:assembleDebug
+# APK in: app/build/outputs/apk/debug/app-debug.apk
