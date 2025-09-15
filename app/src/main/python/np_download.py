@@ -7,6 +7,8 @@ MAX_RETRIES = 3
 RETRY_DELAY_SECONDS = 5
 LONG_SLEEP_INTERVAL = 15 # Descargas antes de un sleep largo
 LONG_SLEEP_SECONDS = 4 # Duración del sleep largo
+VERY_LONG_SLEEP_INTERVAL = 70 # Descargas antes de un sleep muy largo
+VERY_LONG_SLEEP_SECONDS = 30 # Duración del sleep muy largo
 
 def download_songs(csv_path, download_folder, callback=None):
     """
@@ -47,7 +49,7 @@ def download_songs(csv_path, download_folder, callback=None):
     try:
         with open(csv_path, 'r', newline='', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
-            download_count = 0 # Add this counter
+            download_count = 0
             for row in reader:
                 if not row:
                     continue
@@ -66,8 +68,12 @@ def download_songs(csv_path, download_folder, callback=None):
                         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                             ydl.download([search_query])
                         results["success"].append(search_query)
-                        download_count += 1 # Increment counter
-                        if download_count % LONG_SLEEP_INTERVAL == 0:
+                        download_count += 1
+                        if download_count % VERY_LONG_SLEEP_INTERVAL == 0:
+                            if callback:
+                                callback.onProgressUpdate(f"Pausa MUY larga de {VERY_LONG_SLEEP_SECONDS} segundos para evitar detección de bot...")
+                            time.sleep(VERY_LONG_SLEEP_SECONDS)
+                        elif download_count % LONG_SLEEP_INTERVAL == 0:
                             if callback:
                                 callback.onProgressUpdate(f"Pausa larga de {LONG_SLEEP_SECONDS} segundos para evitar detección de bot...")
                             time.sleep(LONG_SLEEP_SECONDS)
