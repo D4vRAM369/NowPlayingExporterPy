@@ -20,7 +20,7 @@ Exporta el historial de **Now Playing / Está sonando** (Android System Intellig
 
 ---
 
-## Rutas y formatos
+## 📁 Rutas y formatos
 
 * **DB de ASI** (ejemplos habituales):
 
@@ -40,7 +40,7 @@ Exporta el historial de **Now Playing / Está sonando** (Android System Intellig
 
 ---
 
-## Cómo funciona (resumen técnico)
+## 🚀🔍 Cómo funciona (resumen técnico)
 
 1. **Root (libsu)** copia `history_db` de ASI a la sandbox de la app.
 2. **Chaquopy (Python)** ejecuta `np_export.py` para leer SQLite y generar el **CSV** temporal.
@@ -50,7 +50,7 @@ Exporta el historial de **Now Playing / Está sonando** (Android System Intellig
 
 ---
 
-## Requisitos
+## 📋 Requisitos
 
 * **Root** (Magisk / KernelSU Next / aPatch).
 * **ASI** instalado (Android System Intelligence).
@@ -58,7 +58,7 @@ Exporta el historial de **Now Playing / Está sonando** (Android System Intellig
 
 ---
 
-## Lecciones aprendidas (problemas → soluciones)
+## ✍️ Lecciones aprendidas (problemas → soluciones)
 
 1. **FFmpeg & `yt-dlp`**: Chaquopy no aporta FFmpeg vía pip. `yt-dlp` puede bajar audio nativo (`.webm`) **sin FFmpeg**, así que se eliminó la falsa dependencia y se configuró “best audio”.
 2. **Progreso en tiempo real**: se añadió una interfaz `PythonCallback` desde Kotlin para recibir logs/estado del script Python y mostrarlos en la UI.
@@ -67,7 +67,7 @@ Exporta el historial de **Now Playing / Está sonando** (Android System Intellig
 
 ---
 
-## Uso
+## 🚀 Uso
 
 1. **Instala** el APK.
 2. **Concede root** cuando te lo pida.
@@ -107,7 +107,7 @@ Exporta el historial de **Now Playing / Está sonando** (Android System Intellig
 
 ---
 
-## Arquitectura y tecnologías
+## ⚙️ Arquitectura y tecnologías
 
 * **Kotlin (Android)**: UI + lógica principal.
 * **Chaquopy (Python)**: ejecución de scripts (`np_export.py`, `np_dedupe.py`, `np_download.py`).
@@ -118,14 +118,14 @@ Exporta el historial de **Now Playing / Está sonando** (Android System Intellig
 
 ---
 
-## Compilación
+## 🛠️ Compilación
 
 ### Android Studio
 
 * Abre el proyecto y **Sync**.
 * **Build > Make Project** o **Run**.
 
-### CLI
+### ⌨️ CLI
 
 ```bash
 git clone <URL_DEL_REPOSITORIO>
