@@ -10,10 +10,10 @@ android {
 
     defaultConfig {
         applicationId = "com.d4vram.nowplayingexporterpy"
-        minSdk = 28
+        minSdk = 29
         targetSdk = 35
         versionCode = 3
-        versionName = "1.2.0"
+        versionName = "1.2"
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a")
@@ -35,6 +35,7 @@ android {
         }
     }
 
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -42,18 +43,13 @@ android {
     kotlinOptions { jvmTarget = "17" }
 }
 
-chaquopy {
-    defaultConfig {
-        pip {
-            install("yt-dlp")
-        }
-    }
-}
-
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
+
+
+    // Root access
 
     implementation("com.github.topjohnwu.libsu:core:5.2.2")
     implementation("com.github.topjohnwu.libsu:service:5.2.2")
