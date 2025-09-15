@@ -1,49 +1,146 @@
-# Now Playing Exporter (Python inside APK)
+# NowPlayingExporterPy
 
-App Android que **integra tu script de exportación en Python** para extraer el historial de *Now Playing* (Android System Intelligence) y guardarlo como **CSV** en `Descargas`. Dedupe opcional.
+![NowPlayingExporterPy (1)](https://github.com/user-attachments/assets/162df03c-33f2-4275-89f1-eebd064d7c77)
 
-- Lógica Python basada en tu [`nowplaying_export.py`] y [`dedupe_nowplaying.py`]. :contentReference[oaicite:2]{index=2} :contentReference[oaicite:3]{index=3}
-- La copia desde `/data/data/...` se hace con **root** (libsu) y la APK **no requiere Termux**.
+Exporta el historial de **Now Playing / Está sonando** (Android System Intelligence, ASI) de dispositivos Google Pixel a **CSV**, e incorpora una función para **descargar las canciones** listadas en ese historial (vía `yt-dlp`) al almacenamiento de la app. Pensada y construida como proyecto de **Aprendizaje Basado en Proyectos (PBL)**.&#x20;
+
+> **⚠️ Requiere root.** La base de datos de ASI es privada del sistema. Concede permisos de superusuario (Magisk / KernelSU / aPatch) antes de usarla. Para explorar los ficheros resultantes puede hacer falta un gestor con root.
+
+---
+
+## Características
+
+* ✅ Exportación a **CSV** del historial “Está Sonando”.
+* ✅ **Deduplicación** inteligente (ventanas de tiempo) para limpiar duplicados y “falsos repetidos”.
+* ✅ **Descarga de canciones** desde el CSV con `yt-dlp` al directorio privado de la app (no necesita permisos de almacenamiento).
+* ✅ UI minimalista con feedback de progreso en tiempo real.&#x20;
+
+---
+
+## Rutas y formatos
+
+* **DB de ASI** (ejemplos habituales):
+
+  ```
+  /data/data/com.google.android.as/databases/history_db
+  /data/user_de/0/com.google.android.as/databases/history_db
+  /data/data/com.google.android.as.oss/databases/history_db
+  ```
+* **Salida CSV**: en `Descargas` (MediaStore) con nombre `now_playing_export_YYYYMMDD_HHMMSS[_dedup].csv`.
+* **Descargas de audio** (con `yt-dlp`):
+
+  ```
+  /Android/data/com.d4vram.nowplayingexporterpy/files/Music/NPEpy_download_songs/
+  ```
+
+  Formato típico: `.webm` (sin post-procesado FFmpeg). Para escucharlas en tu reproductor, **mueve/copialas** a `/sdcard/Music/`.&#x20;
+
+---
+
+## Cómo funciona (resumen técnico)
+
+1. **Root (libsu)** copia `history_db` de ASI a la sandbox de la app.
+2. **Chaquopy (Python)** ejecuta `np_export.py` para leer SQLite y generar el **CSV** temporal.
+3. (Opcional) `np_dedupe.py` aplica **deduplicación** por ventana temporal.
+4. La app guarda el CSV final en **Descargas** y ofrece **compartir** por intent estándar.
+5. Con el CSV listo, **`yt-dlp`** busca y descarga los audios a la carpeta privada de la app.&#x20;
+
+---
 
 ## Requisitos
 
-- Android 9+ (minSdk 28).
-- Dispositivo **rooteado** (Magisk, KernelSU, KSU Next o aPatch).
-- *Now Playing* activo (`com.google.android.as` o `.as.oss`).
+* **Root** (Magisk / KernelSU Next / aPatch).
+* **ASI** instalado (Android System Intelligence).
+* Probado en **Android 16** (Pixel con KernelSU Next). Se espera compatibilidad Android **12–15** en Pixel (no garantizada).&#x20;
 
-> **Sin root no es posible**: la DB está en `/data/data/...`. Shizuku sin root no da acceso a esa ruta.
+---
 
-## Cómo compilar
+## Lecciones aprendidas (problemas → soluciones)
 
-1. Clona el repo y ábrelo en Android Studio (AGP 8.5, Kotlin 1.9).
-2. Sincroniza Gradle. No hay dependencias pip.
-3. Conecta el Pixel rooteado y pulsa *Run*.
+1. **FFmpeg & `yt-dlp`**: Chaquopy no aporta FFmpeg vía pip. `yt-dlp` puede bajar audio nativo (`.webm`) **sin FFmpeg**, así que se eliminó la falsa dependencia y se configuró “best audio”.
+2. **Progreso en tiempo real**: se añadió una interfaz `PythonCallback` desde Kotlin para recibir logs/estado del script Python y mostrarlos en la UI.
+3. **DNS / red intermitente**: además de declarar `android.permission.INTERNET`, se implementaron **reintentos** con pausas y “pausa larga” tras N descargas.
+4. **Scoped Storage (API 29+)**: escribir en `Music` público da `Operation not permitted`. Solución: **usar almacenamiento privado de la app** en `/Android/data/.../files/` (no requiere permisos en Android 10+).&#x20;
+
+---
 
 ## Uso
 
-1. Abre **Now Playing Exporter**.
-2. Verás *Root OK*. Pulsa **Exportar**.
-3. Opcional: marca **Deduplicar (10 min)** para eliminar repeticiones cercanas.
-4. El archivo se guarda en **Descargas** como `now_playing_export_YYYYMMDD_HHMMSS.csv` (o `_dedup_10min.csv`).
-5. Usa **Compartir** para enviarlo.
+1. **Instala** el APK.
+2. **Concede root** cuando te lo pida.
+3. Pulsa **Exportar** para generar el CSV del historial.
+4. (Opcional, recomendado) Activa **Deduplicar**.
+5. Pulsa **Descargar canciones** para poblar `NPEpy_download_songs/`.&#x20;
 
-## ¿Qué hace internamente?
+> **Tip importante para buena legibilidad**: abrir el CSV en hojas de cálculo sin romper columnas
 
-1. **RootHelper** copia la DB `history_db` desde rutas conocidas a `cacheDir/np_history.db`.
-2. Kotlin llama al módulo Python `np_export.export_csv(db, tmpCsv)` que:
-    - Detecta tablas/columnas y extrae `artist`, `title`, `timestamp` (convierte a ISO UTC).
-    - Usa `display` como *fallback* si faltan artista/título.
-3. Si está activado, llama a `np_dedupe.dedupe_csv(tmpCsv, dedupCsv, 10)`.
-4. Mueve el CSV a **Descargas** usando **MediaStore**.
-5. La app nunca sube datos: todo es **local**.
 
-## Rutas de DB buscadas
+    >   Para que no te “trocee” los títulos por espacios, toca exactamente esto:
+    
+    En Opciones de separador
 
-- `/data/data/com.google.android.as/databases/history_db`
-- `/data/user_de/0/com.google.android.as/databases/history_db`
-- `/data/data/com.google.android.as.oss/databases/history_db`
-- `/data/user_de/0/com.google.android.as.oss/databases/history_db`
-- `/data/data/com.google.intelligence.sense/databases/history_db`
+    ✅ Coma
+
+    ⛔ Espacio → DESMARCA
+    
+    ⛔ Punto y coma → DESMARCA
+
+    ⛔ Tabulador → DESMARCA (déjalo solo si tu archivo lleva tabs)
+
+    En Delimitador de cadena → elige " (comillas dobles).
+
+    Conjunto de caracteres → Unicode (UTF-8) (como ya tienes).
+
+    (Recomendado) En la vista previa, haz clic en el encabezado de la columna timestamp_iso (y cualquier otra de tiempo) y en Tipo de columna pon Texto para que no te lo reinterprete como fecha rara.
+
+    Luego pulsa Aceptar.
+    Con eso la vista previa debe pasar de palabras sueltas en mil columnas a columnas limpias: artist | title | timestamp_iso | ...
+
+    👉 Si aun así ves todo roto, abre el archivo en un editor y mira el separador real:
+
+    Si ves ; entre campos, importa marcando Punto y coma (y desmarcando lo demás).
+
+    Si ves ,, usa Coma como arriba.
+
+---
+
+## Arquitectura y tecnologías
+
+* **Kotlin (Android)**: UI + lógica principal.
+* **Chaquopy (Python)**: ejecución de scripts (`np_export.py`, `np_dedupe.py`, `np_download.py`).
+* **`yt-dlp`**: búsqueda/descarga de audio.
+* **`libsu`**: operaciones root.
+* **SQLite**: base de datos de ASI.
+* **Scoped Storage**: políticas de acceso en Android 10+.&#x20;
+
+---
+
+## Compilación
+
+### Android Studio
+
+* Abre el proyecto y **Sync**.
+* **Build > Make Project** o **Run**.
+
+### CLI
+
+```bash
+git clone <URL_DEL_REPOSITORIO>
+cd NowPlayingExporterPy
+./gradlew :app:assembleDebug
+# APK en: app/build/outputs/apk/debug/app-debug.apk
+```
+
+
+
+---
+
+## Contribuciones
+
+¡Bienvenidas! Abre un *issue* o un *pull request* con tu propuesta.&#x20;
 
 ## Licencia
-MIT
+
+**GPL-3.0**. Consulta el archivo `LICENSE` para más detalles.&#x20;
+
+---

@@ -3,10 +3,20 @@
 # Binarios
 *.png binary
 *.jpg binary
+*.jpeg binary
+*.gif binary
 *.webp binary
 *.ico binary
-*.ttf binary
-*.otf binary
-*.jks binary
-*.keystore binary
+*.pdf binary
+*.jks -diff
+*.keystore -diff
+
+# Texto
+*.kt text
+*.kts text
+*.java text
+*.gradle text
+*.gradle.kts text
+*.md text
+LICENSE text
 

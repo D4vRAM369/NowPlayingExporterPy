@@ -48,3 +48,18 @@ tmp/
 temp/
 *.swp
 
+# --- IDE ---
+.idea/
+
+# --- Caches Python extra ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Otros editores ---
+.vscode/
+
+# --- Crash logs JVM ---
+hs_err_pid*.log
+
+
