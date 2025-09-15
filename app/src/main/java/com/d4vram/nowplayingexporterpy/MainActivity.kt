@@ -15,6 +15,8 @@ import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.File
+import java.io.FileWriter
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlinx.coroutines.Dispatchers
@@ -190,6 +192,11 @@ class MainActivity : AppCompatActivity(), PythonCallback {
             val successList = resultMap[PyObject.fromJava("success")]?.asList()
             val errorList = resultMap[PyObject.fromJava("errors")]?.asList()
 
+            // Actualizar el archivo de canciones descargadas
+            successList?.forEach { songQuery ->
+                addDownloadedSong(songQuery.toString())
+            }
+
             runOnUiThread {
                 val successCount = successList?.size ?: 0
                 val errorCount = errorList?.size ?: 0
@@ -206,7 +213,7 @@ class MainActivity : AppCompatActivity(), PythonCallback {
                         logOnUi("  - Falló: $query -> $errorMsg")
                     }
                 }
-                logOnUi("Archivos guardados en la carpeta 'Music'.")
+                logOnUi("Archivos guardados en la carpeta 'Music/NPEpy_download_songs'.")
                 logOnUi("--- FIN DE DESCARGA ---")
                 Toast.makeText(this, "Proceso de descarga terminado.", Toast.LENGTH_LONG).show()
             }
@@ -218,6 +225,34 @@ class MainActivity : AppCompatActivity(), PythonCallback {
                 Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
             }
             logOnUi("Error crítico durante la descarga: $msg")
+        }
+    }
+
+    private fun getDownloadedSongsFile(): File {
+        return File(applicationContext.getExternalFilesDir(null), "downloaded_songs.txt")
+    }
+
+    private fun readDownloadedSongs(): Set<String> {
+        val file = getDownloadedSongsFile()
+        if (!file.exists()) {
+            return emptySet()
+        }
+        return try {
+            file.readLines().toSet()
+        } catch (e: IOException) {
+            logOnUi("Error leyendo downloaded_songs.txt: ${e.message}")
+            emptySet()
+        }
+    }
+
+    private fun addDownloadedSong(songQuery: String) {
+        val file = getDownloadedSongsFile()
+        try {
+            FileWriter(file, true).use { writer ->
+                writer.append("$songQuery\n")
+            }
+        } catch (e: IOException) {
+            logOnUi("Error escribiendo en downloaded_songs.txt: ${e.message}")
         }
     }
 
@@ -252,6 +287,8 @@ class MainActivity : AppCompatActivity(), PythonCallback {
     private fun logOnUi(msg: String) {
         runOnUiThread {
             tvLog.append(msg + "\n")
+            val scrollView = tvLog.parent as? ScrollView
+            scrollView?.post { scrollView.fullScroll(View.FOCUS_DOWN) }
         }
     }
 }
